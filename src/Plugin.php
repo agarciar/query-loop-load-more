@@ -251,16 +251,24 @@ class Plugin {
 		$inherit          = $block->context['query']['inherit'] ?? false;
 		$is_infinite      = $attributes['infiniteScroll'] ?? false;
 		$is_update_url    = $attributes['updateUrl'] ?? false;
-		$page = $inherit
+		$page             = $inherit
 			? ( get_query_var( 'paged' ) ? get_query_var( 'paged' ) : 1 )
 			: ( empty( $_GET[ $page_key ] ) ? 1 : (int) $_GET[ $page_key ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$page_parameter   = $inherit ? 'paged' : $page_key;
 		$block_query      = $inherit ? $wp_query : new \WP_Query( build_query_vars_from_query_block( $block, $page ) );
-		$max_pages        = empty( $block->context['query']['pages'] ) ? $block_query->max_num_pages : (int) $block->context['query']['pages'];
+		$max_pages        = empty( $block->context['query']['pages'] ) ? $block_query->max_num_pages : (int) $block_query->max_num_pages;
 		$button_classes   = $is_infinite
 			? 'wp-load-more__button wp-load-more__infinite-scroll'
 			: 'wp-block-button__link wp-element-button wp-load-more__button';
 		$pagination_arrow = 'none' !== $attributes['paginationArrow'] ? '<span class="wp-block-query-pagination__arrow">' . $arrow_map[ $attributes['paginationArrow'] ] . '</span>' : '';
+
+		// Get all current query parameters.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$query_params = $_GET;
+		// Set the next page parameter.
+		$query_params[ $page_parameter ] = $page + 1;
+		// Build the new query string.
+		$href = '?' . http_build_query( $query_params );
 
 		$infinite_scroll_markup = '';
 		if ( $is_infinite ) {
@@ -277,17 +285,18 @@ class Plugin {
 
 			// Build list of load more links.
 			$block_content = sprintf(
-				'<a class="%1$s" href="?%2$s=%3$d" data-query-next-page="%3$d" data-query-key="%5$d" data-query-max-page="%6$d" data-query-url="%2$s" data-update-url="%7$s"><span class="qllm-loading">%4$s%9$s</span><span class="qllm-load-more%10$s">%8$s</span></a>',
+				'<a class="%s" href="%s" data-query-next-page="%d" data-query-key="%d" data-query-max-page="%d" data-query-url="%s" data-update-url="%s"><span class="qllm-loading">%s%s</span><span class="qllm-load-more%s">%s</span></a>',
 				$button_classes,
-				$page_parameter,
+				esc_url( $href ),
 				$page + 1,
-				$is_infinite ? '' : esc_html( $attributes['loadingText'] ),
 				$query_id,
 				$max_pages,
+				$page_parameter,
 				$is_update_url,
-				$is_infinite ? esc_html( $attributes['loadMoreText'] ) : esc_html( $attributes['loadMoreText'] ) . $pagination_arrow,
+				$is_infinite ? '' : esc_html( $attributes['loadingText'] ),
 				$infinite_scroll_markup,
-				$is_infinite ? ' screen-reader-text' : '' // Note space at the beginning of the class name
+				$is_infinite ? ' screen-reader-text' : '',
+				$is_infinite ? esc_html( $attributes['loadMoreText'] ) : esc_html( $attributes['loadMoreText'] ) . $pagination_arrow
 			);
 		} else {
 			//all posts loaded
