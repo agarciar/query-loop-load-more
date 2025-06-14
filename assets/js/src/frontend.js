@@ -127,11 +127,23 @@ const fetchPosts = ( target ) => {
 			//update button attributes
 			if ( queryNextPage < queryMaxPage ) {
 				button.dataset.queryNextPage = queryNextPage + 1;
-				button.href =
-					'?' +
-					button.dataset.queryUrl +
-					'=' +
-					button.dataset.queryNextPage;
+
+				// Create URL with current parameters
+				const buttonUrl = new URL( window.location.href );
+				const currentParams = new URLSearchParams( window.location.search );
+
+				// Preserve all current parameters
+				for ( const [key, value] of currentParams.entries() ) {
+					buttonUrl.searchParams.set( key, value );
+				}
+
+				// Update or add the queryUrl parameter
+				buttonUrl.searchParams.set(
+					button.dataset.queryUrl,
+					button.dataset.queryNextPage
+				);
+
+				button.href = buttonUrl.toString();
 			}
 		} )
 		.catch( ( error ) => {
