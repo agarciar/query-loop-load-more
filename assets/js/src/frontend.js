@@ -96,7 +96,14 @@ const fetchPosts = ( target ) => {
 			//update URL
 			if ( button.dataset.updateUrl ) {
 				const newUrl = new URL( window.location.href );
+				const currentParams = new URLSearchParams( window.location.search );
 
+				// Preserve all current parameters
+				for ( const [key, value] of currentParams.entries() ) {
+					newUrl.searchParams.set( key, value );
+				}
+
+				// Update or add the queryUrl parameter
 				newUrl.searchParams.set(
 					button.dataset.queryUrl,
 					queryNextPage
